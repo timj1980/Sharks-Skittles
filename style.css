@@ -57,3 +57,23 @@ th {
   font-weight: 600;
   color: #0969da;
 }
+
+/* --- Sharks logo in tab bar --- */
+
+.gh-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gh-logo {
+  height: 32px;
+  width: auto;
+  border-radius: 4px;
+}
+
+.gh-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #24292f;
+}
