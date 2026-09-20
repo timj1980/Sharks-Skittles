@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <title>Sharks – Player Averages</title>
+
+  <!-- Load shared styles including GitHub-style tabs -->
+  <link rel="stylesheet" href="style.css" />
+
   <style>
     body { font-family: Arial; margin: 20px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -13,6 +17,7 @@
 
 <body>
 
+<!-- Shared navigation -->
 <div id="nav-placeholder"></div>
 
 <script>
@@ -21,8 +26,6 @@
     .then(response => response.text())
     .then(html => {
       document.getElementById("nav-placeholder").innerHTML = html;
-
-      // After nav loads, activate JS
       initNav();
     });
 
@@ -38,6 +41,7 @@
     });
   }
 </script>
+
 <h1>Sharks – Player Averages</h1>
 
 <table id="avgTable">
@@ -79,7 +83,7 @@
     }
 
     for (const row of scores) {
-      // ⭐ Determine if Sharks were home or away using RPC
+      // Determine if Sharks were home or away using RPC
       const { data: fx } = await supabase.rpc("get_sharks_fixture", {
         game_date: row.GameDate
       });
@@ -110,7 +114,7 @@
     const tbody = document.querySelector("#avgTable tbody");
     tbody.innerHTML = "";
 
-    // ⭐ Sort by highest average
+    // Sort by highest average
     const sortedPlayers = Object.entries(players)
       .sort((a, b) => (b[1].total / b[1].games) - (a[1].total / a[1].games));
 
