@@ -1,3 +1,8 @@
+/* Global system font */
+html, body {
+  font-family: system-ui, sans-serif;
+}
+
 /* Make table full width */
 table {
   width: 100%;
