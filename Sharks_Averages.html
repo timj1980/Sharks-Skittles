@@ -83,33 +83,37 @@
     }
 
     for (const row of scores) {
-      // Determine if Sharks were home or away using RPC
-      const { data: fx } = await supabase.rpc("get_sharks_fixture", {
-        game_date: row.GameDate
-      });
+  const { data: fx } = await supabase.rpc("get_sharks_fixture", {
+    game_date: row.GameDate
+  });
 
-      if (!fx || fx.length === 0) continue;
+  if (!fx || fx.length === 0) continue;
 
-      const home = fx[0].home_team_name;
-      const away = fx[0].away_team_name;
+  // ⭐ Pick the correct row (Sharks home or away)
+  const fixture = fx.find(f =>
+    f.home_team_name === "Sharks" || f.away_team_name === "Sharks"
+  );
 
-      const sharksHome = home === "Sharks";
-      const sharksAway = away === "Sharks";
+  if (!fixture) continue;
 
-      if (sharksHome) {
-        addScore(row.Home_Player, [
-          row.HomeBall1, row.HomeBall2, row.HomeBall3, row.HomeBall4,
-          row.HomeBall5, row.HomeBall6, row.HomeBall7, row.HomeBall8
-        ]);
-      }
+  const sharksHome = fixture.home_team_name === "Sharks";
+  const sharksAway = fixture.away_team_name === "Sharks";
 
-      if (sharksAway) {
-        addScore(row.Away_Player, [
-          row.AwayBall1, row.AwayBall2, row.AwayBall3, row.AwayBall4,
-          row.AwayBall5, row.AwayBall6, row.AwayBall7, row.AwayBall8
-        ]);
-      }
-    }
+  if (sharksHome) {
+    addScore(row.Home_Player, [
+      row.HomeBall1, row.HomeBall2, row.HomeBall3, row.HomeBall4,
+      row.HomeBall5, row.HomeBall6, row.HomeBall7, row.HomeBall8
+    ]);
+  }
+
+  if (sharksAway) {
+    addScore(row.Away_Player, [
+      row.AwayBall1, row.AwayBall2, row.AwayBall3, row.AwayBall4,
+      row.AwayBall5, row.AwayBall6, row.AwayBall7, row.AwayBall8
+    ]);
+  }
+}
+
 
     const tbody = document.querySelector("#avgTable tbody");
     tbody.innerHTML = "";
