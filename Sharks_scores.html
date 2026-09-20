@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <title>Sharks – Match Viewer</title>
+
+  <!-- Load shared styles including GitHub-style tabs -->
+  <link rel="stylesheet" href="style.css" />
+
   <style>
     body { font-family: Arial; margin: 20px; }
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -15,6 +19,7 @@
 
 <body>
 
+<!-- Shared navigation -->
 <div id="nav-placeholder"></div>
 
 <script>
@@ -23,8 +28,6 @@
     .then(response => response.text())
     .then(html => {
       document.getElementById("nav-placeholder").innerHTML = html;
-
-      // After nav loads, activate JS
       initNav();
     });
 
@@ -41,7 +44,7 @@
   }
 </script>
 
-<h1>Sharks – Match Viewer</h1>
+<h1>Sharks – Game Results</h1>
 
 <div id="teamNames"></div>
 
@@ -79,31 +82,28 @@
     const dates = [...new Set(scores.map(row => row.GameDate))];
 
     for (const date of dates) {
-  const { data: fx } = await supabase.rpc("get_sharks_fixture", {
-    game_date: date
-  });
+      const { data: fx } = await supabase.rpc("get_sharks_fixture", {
+        game_date: date
+      });
 
-  let label = date;
+      let label = date;
 
-  if (fx && fx.length > 0) {
-    const home = fx[0].home_team_name;
-    const away = fx[0].away_team_name;
+      if (fx && fx.length > 0) {
+        const home = fx[0].home_team_name;
+        const away = fx[0].away_team_name;
 
-    const isHome = home === "Sharks";
-    const isAway = away === "Sharks";
+        const isHome = home === "Sharks";
+        const opponent = isHome ? away : home;
+        const ha = isHome ? "(H)" : "(A)";
 
-    const opponent = isHome ? away : home;
-    const ha = isHome ? "(H)" : "(A)";
+        label = `${date} ${ha} ${opponent}`;
+      }
 
-    label = `${date} ${ha} ${opponent}`;
-  }
-
-  const opt = document.createElement("option");
-  opt.value = date;
-  opt.textContent = label;
-  matchSelect.appendChild(opt);
-}
-
+      const opt = document.createElement("option");
+      opt.value = date;
+      opt.textContent = label;
+      matchSelect.appendChild(opt);
+    }
 
     if (dates.length > 0) {
       loadMatchTable(scores, dates[0]);
@@ -128,11 +128,10 @@
     const tbody = document.querySelector("#matchTable tbody");
     tbody.innerHTML = "";
 
-    // ⭐ Call your RPC function
-    const { data: fx, error } = await supabase.rpc("get_sharks_fixture", {
+    const { data: fx } = await supabase.rpc("get_sharks_fixture", {
       game_date: selectedDate
     });
-console.log("RPC result:", fx, error);
+
     let homeTeamName = "Unknown";
     let awayTeamName = "Unknown";
 
