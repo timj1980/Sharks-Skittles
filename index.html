@@ -121,16 +121,6 @@
     .from("Sharks_scores")
     .select("*");
 
-  // ⭐ Get fixtures so we can look up alleys
-  const { data: fixtures } = await supabase.rpc("get_fixtures_by_team", {
-    team: "Sharks"
-  });
-
-  const alleyLookup = {};
-  fixtures.forEach(f => {
-    alleyLookup[f.game_date] = f.alley;
-  });
-
   const players = {};
 
   function addScore(player, balls, alley) {
@@ -145,8 +135,6 @@
   }
 
   for (const row of scores) {
-    const alley = alleyLookup[row.GameDate];   // ⭐ Correct alley
-
     const { data: fx } = await supabase.rpc("get_sharks_fixture", {
       game_date: row.GameDate
     });
@@ -159,6 +147,10 @@
 
     const sharksHome = home === "Sharks";
     const sharksAway = away === "Sharks";
+
+    const alley = sharksHome
+      ? fixture.home_alley
+      : fixture.away_alley;
 
     if (sharksHome) {
       addScore(row.Home_Player, [
@@ -174,6 +166,25 @@
       ], alley);
     }
   }
+
+  const sorted = Object.entries(players)
+    .sort((a, b) => b[1].highest - a[1].highest)
+    .slice(0, 3);
+
+  const el = document.getElementById("topScorerText");
+
+  if (sorted.length === 0) {
+    el.textContent = "No scores available yet.";
+    return;
+  }
+
+  el.innerHTML = sorted
+    .map(([name, stats], i) =>
+      `${i+1}. ${name} – ${stats.highest} (at ${stats.alley})`
+    )
+    .join("<br>");
+}
+
 
   // ⭐ Sort by highest single-game score
   const sorted = Object.entries(players)
