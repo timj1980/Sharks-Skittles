@@ -1,0 +1,22 @@
+/* Make table full width */
+table {
+  width: 100%;
+  border-collapse: collapse; /* ensures clean lines */
+}
+
+/* Left-align headings and cells */
+th, td {
+  text-align: left;
+  padding: 8px;
+}
+
+/* Add lines between columns and rows */
+th, td {
+  border: 1px solid #ccc;
+}
+
+/* Optional: make headings stand out */
+th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
