@@ -116,58 +116,73 @@
 
 
   // ⭐ Load current top scorer once on page load
-  async function loadTopScorer() {
-    const { data: scores } = await supabase
-      .from("Sharks_scores")
-      .select("*");
+ async function loadTopScorer() {
+  const { data: scores } = await supabase
+    .from("Sharks_scores")
+    .select("*");
 
-    const players = {};
+  const players = {};
 
-    function addScore(player, balls) {
-      const total = balls.reduce((a,b) => a+b, 0);
+  function addScore(player, balls, alley) {
+    const total = balls.reduce((a,b) => a+b, 0);
 
-      if (!players[player]) players[player] = { highest: 0 };
+    if (!players[player]) players[player] = { highest: 0, alley: "" };
 
-      if (total > players[player].highest) {
-        players[player].highest = total;
-      }
+    if (total > players[player].highest) {
+      players[player].highest = total;
+      players[player].alley = alley;   // ⭐ store alley of best score
     }
-
-    for (const row of scores) {
-      const { data: fx } = await supabase.rpc("get_sharks_fixture", {
-        game_date: row.GameDate
-      });
-      if (!fx || fx.length === 0) continue;
-
-      const home = fx[0].home_team_name;
-      const away = fx[0].away_team_name;
-
-      const sharksHome = home === "Sharks";
-      const sharksAway = away === "Sharks";
-
-      if (sharksHome) {
-        addScore(row.Home_Player, [
-          row.HomeBall1, row.HomeBall2, row.HomeBall3, row.HomeBall4,
-          row.HomeBall5, row.HomeBall6, row.HomeBall7, row.HomeBall8
-        ]);
-      }
-
-      if (sharksAway) {
-        addScore(row.Away_Player, [
-          row.AwayBall1, row.AwayBall2, row.AwayBall3, row.AwayBall4,
-          row.AwayBall5, row.AwayBall6, row.AwayBall7, row.AwayBall8
-        ]);
-      }
-    }
-
-    const top = Object.entries(players)
-      .sort((a, b) => b[1].highest - a[1].highest)[0];
-
-    const el = document.getElementById("topScorerText");
-    el.textContent = top
-      ? `${top[0]} – Highest Score ${top[1].highest}`
-      : "No scores available yet.";
   }
+
+  for (const row of scores) {
+    const { data: fx } = await supabase.rpc("get_sharks_fixture", {
+      game_date: row.GameDate
+    });
+    if (!fx || fx.length === 0) continue;
+
+    const fixture = fx[0];
+    const alley = fixture.alley;   // ⭐ this is the alley we want
+
+    const home = fixture.home_team_name;
+    const away = fixture.away_team_name;
+
+    const sharksHome = home === "Sharks";
+    const sharksAway = away === "Sharks";
+
+    if (sharksHome) {
+      addScore(row.Home_Player, [
+        row.HomeBall1, row.HomeBall2, row.HomeBall3, row.HomeBall4,
+        row.HomeBall5, row.HomeBall6, row.HomeBall7, row.HomeBall8
+      ], alley);
+    }
+
+    if (sharksAway) {
+      addScore(row.Away_Player, [
+        row.AwayBall1, row.AwayBall2, row.AwayBall3, row.AwayBall4,
+        row.AwayBall5, row.AwayBall6, row.AwayBall7, row.AwayBall8
+      ], alley);
+    }
+  }
+
+  // ⭐ Sort by highest single-game score
+  const sorted = Object.entries(players)
+    .sort((a, b) => b[1].highest - a[1].highest)
+    .slice(0, 3); // ⭐ Top 3
+
+  const el = document.getElementById("topScorerText");
+
+  if (sorted.length === 0) {
+    el.textContent = "No scores available yet.";
+    return;
+  }
+
+  // ⭐ Multi-line banner including alley
+  el.innerHTML = sorted
+    .map(([name, stats], i) =>
+      `${i+1}. ${name} – ${stats.highest} (at ${stats.alley})`
+    )
+    .join("<br>");
+}
 
   // ⭐ Run both once
   loadNextFixture();
