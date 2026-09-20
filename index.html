@@ -1,27 +1,143 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Sharks – Index</title>
+  <meta charset="UTF-8">
+  <title>Enter Sharks Scores</title>
   <style>
-    body { font-family: Arial; margin: 40px; }
-    h1 { margin-bottom: 20px; }
-    ul { list-style: none; padding: 0; }
-    li { margin: 12px 0; }
-    a { font-size: 20px; text-decoration: none; color: #0066cc; }
-    a:hover { text-decoration: underline; }
+    body { font-family: Arial; padding: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    input { width: 40px; padding: 4px; text-align: center; }
+    .player { width: 120px; }
+    .hand { font-weight: bold; }
+    button { padding: 10px 16px; }
   </style>
 </head>
-
 <body>
 
-<h1>Sharks – Index</h1>
+<h1>Enter Sharks Scores</h1>
 
-<ul>
-  <li><a href="Team_Fixtures.html?Sharks">Fixtures</a></li>
-  <li><a href="Sharks_Scores.html">Match Results</a></li>
-  <li><a href="sharks_Averages.html">Player Averages</a></li>
-</ul>
+<label>Game Date:</label>
+<input type="date" id="GameDate">
+
+<table>
+  <thead>
+    <tr>
+      <th>Hand</th>
+      <th>Home Player</th>
+      <th colspan="8">Home Balls</th>
+      <th>Total</th>
+      <th>Away Player</th>
+      <th colspan="8">Away Balls</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+
+  <tbody id="scoreRows"></tbody>
+</table>
+
+<button id="submitMatch">Submit Match</button>
+<p id="result"></p>
+
+<script type="module">
+  import { supabase } from './supabase.js';
+
+  // Define the hands (no preset players)
+  const rows = [
+    { hand: "Front" },
+    { hand: "Front" },
+    { hand: "Front" },
+    { hand: "Middle" },
+    { hand: "Middle" },
+    { hand: "Middle" },
+    { hand: "Back" },
+    { hand: "Back" },
+    { hand: "Back" },
+    { hand: "Back" }
+  ];
+
+  const tbody = document.getElementById("scoreRows");
+
+  // Build table rows with empty input boxes
+  rows.forEach((r, index) => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td class="hand">${r.hand}</td>
+
+      <td><input class="player" id="homePlayer${index}" placeholder="Home player"></td>
+
+      ${Array.from({ length: 8 }).map((_, i) =>
+        `<td><input type="number" id="homeBall${index}_${i+1}" value=""></td>`
+      ).join("")}
+
+      <td id="homeTotal${index}">0</td>
+
+      <td><input class="player" id="awayPlayer${index}" placeholder="Away player"></td>
+
+      ${Array.from({ length: 8 }).map((_, i) =>
+        `<td><input type="number" id="awayBall${index}_${i+1}" value=""></td>`
+      ).join("")}
+
+      <td id="awayTotal${index}">0</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+
+  // Auto-total calculation
+  function updateTotals() {
+    rows.forEach((_, index) => {
+      let homeTotal = 0;
+      let awayTotal = 0;
+
+      for (let i = 1; i <= 8; i++) {
+        homeTotal += Number(document.getElementById(`homeBall${index}_${i}`).value) || 0;
+        awayTotal += Number(document.getElementById(`awayBall${index}_${i}`).value) || 0;
+      }
+
+      document.getElementById(`homeTotal${index}`).textContent = homeTotal;
+      document.getElementById(`awayTotal${index}`).textContent = awayTotal;
+    });
+  }
+
+  document.querySelectorAll("input[type='number']").forEach(input => {
+    input.addEventListener("input", updateTotals);
+  });
+
+  // Submit match
+  document.getElementById("submitMatch").onclick = async () => {
+    const date = document.getElementById("GameDate").value;
+
+    const payload = [];
+
+    rows.forEach((r, index) => {
+      const row = {
+        GameDate: date,
+        Hand: r.hand,
+        Home_Player: document.getElementById(`homePlayer${index}`).value,
+        Away_Player: document.getElementById(`awayPlayer${index}`).value
+      };
+
+      for (let i = 1; i <= 8; i++) {
+        row[`HomeBall${i}`] = Number(document.getElementById(`homeBall${index}_${i}`).value) || 0;
+        row[`AwayBall${i}`] = Number(document.getElementById(`awayBall${index}_${i}`).value) || 0;
+      }
+
+      payload.push(row);
+    });
+
+    const { data, error } = await supabase
+      .from('Sharks_scores')
+      .insert(payload);
+
+    if (error) {
+      result.textContent = "Error: " + error.message;
+    } else {
+      result.textContent = "Scores uploaded!";
+    }
+  };
+</script>
 
 </body>
 </html>
