@@ -77,3 +77,24 @@ th {
   font-weight: 600;
   color: #24292f;
 }
+
+/* --- Index page banners --- */
+
+.banner {
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 16px;
+  margin: 20px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.banner h2 {
+  margin-top: 0;
+  color: #0366d6;
+}
+
+.banner p {
+  font-size: 18px;
+  margin: 8px 0 0;
+}

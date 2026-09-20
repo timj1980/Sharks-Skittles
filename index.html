@@ -2,26 +2,153 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Sharks – Index</title>
+  <title>Sharks Skittles League</title>
+
+  <!-- Shared styles including GitHub-style tabs -->
+  <link rel="stylesheet" href="style.css" />
+
   <style>
-    body { font-family: Arial; margin: 40px; }
-    h1 { margin-bottom: 20px; }
-    ul { list-style: none; padding: 0; }
-    li { margin: 12px 0; }
-    a { font-size: 20px; text-decoration: none; color: #0066cc; }
-    a:hover { text-decoration: underline; }
+    body { font-family: Arial; margin: 20px; }
+
+    /* Banner styling */
+    .banner {
+      background: #f6f8fa;
+      border: 1px solid #d0d7de;
+      border-radius: 6px;
+      padding: 16px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .banner h2 {
+      margin-top: 0;
+      color: #0366d6;
+    }
+
+    .banner p {
+      font-size: 18px;
+      margin: 8px 0 0;
+    }
   </style>
 </head>
 
 <body>
 
-<h1>Sharks – Index</h1>
+<!-- Shared navigation -->
+<div id="nav-placeholder"></div>
 
-<ul>
-  <li><a href="Team_fixtures.html?Sharks">Fixtures</a></li>
-  <li><a href="Sharks_scores.html">Match Results</a></li>
-  <li><a href="Sharks_Averages.html">Player Averages</a></li>
-</ul>
+<script>
+  // Load shared nav
+  fetch("Nav.html")
+    .then(response => response.text())
+    .then(html => {
+      document.getElementById("nav-placeholder").innerHTML = html;
+      initNav();
+    });
+
+  function initNav() {
+    const page = window.location.pathname.split("/").pop().toLowerCase();
+
+    document.querySelectorAll(".gh-tabs a").forEach(link => {
+      const href = link.getAttribute("href").toLowerCase();
+      if (href.includes(page)) {
+        link.classList.add("active");
+      }
+    });
+  }
+</script>
+
+<h1>Sharks Skittles League</h1>
+
+<!-- Next Fixture Banner -->
+<section class="banner next-fixture">
+  <h2>Next Fixture</h2>
+  <p id="nextFixtureText">Loading next fixture...</p>
+</section>
+
+<!-- Top Scorer Banner -->
+<section class="banner top-scorer">
+  <h2>Current Top Scorer</h2>
+  <p id="topScorerText">Loading top scorer...</p>
+</section>
+
+<script type="module">
+  import { supabase } from "./supabase.js";
+
+  // ⭐ Load next fixture once on page load
+  async function loadNextFixture() {
+    const today = new Date().toISOString().split("T")[0];
+
+    const { data } = await supabase
+      .rpc("get_next_fixture", { team: "Sharks", from_date: today });
+
+    const nextFixture = data && data.length > 0 ? data[0] : null;
+    const el = document.getElementById("nextFixtureText");
+
+    if (nextFixture) {
+      el.textContent =
+        `${nextFixture.game_date} – ${nextFixture.home_away} at ${nextFixture.alley} vs ${nextFixture.opposition}`;
+    } else {
+      el.textContent = "No upcoming fixtures found.";
+    }
+  }
+
+  // ⭐ Load current top scorer once on page load
+  async function loadTopScorer() {
+    const { data: scores } = await supabase
+      .from("Sharks_scores")
+      .select("*");
+
+    const players = {};
+
+    function addScore(player, balls) {
+      const total = balls.reduce((a,b) => a+b, 0);
+      if (!players[player]) players[player] = { games: 0, total: 0 };
+      players[player].games += 1;
+      players[player].total += total;
+    }
+
+    for (const row of scores) {
+      const { data: fx } = await supabase.rpc("get_sharks_fixture", {
+        game_date: row.GameDate
+      });
+      if (!fx || fx.length === 0) continue;
+
+      const home = fx[0].home_team_name;
+      const away = fx[0].away_team_name;
+
+      const sharksHome = home === "Sharks";
+      const sharksAway = away === "Sharks";
+
+      if (sharksHome) {
+        addScore(row.Home_Player, [
+          row.HomeBall1, row.HomeBall2, row.HomeBall3, row.HomeBall4,
+          row.HomeBall5, row.HomeBall6, row.HomeBall7, row.HomeBall8
+        ]);
+      }
+
+      if (sharksAway) {
+        addScore(row.Away_Player, [
+          row.AwayBall1, row.AwayBall2, row.AwayBall3, row.AwayBall4,
+          row.AwayBall5, row.AwayBall6, row.AwayBall7, row.AwayBall8
+        ]);
+      }
+    }
+
+    const top = Object.entries(players)
+      .map(([name, stats]) => ({ name, avg: stats.total / stats.games }))
+      .sort((a, b) => b.avg - a.avg)[0];
+
+    const el = document.getElementById("topScorerText");
+    el.textContent = top
+      ? `${top.name} – Average ${top.avg.toFixed(2)}`
+      : "No scores available yet.";
+  }
+
+  // ⭐ Run both once
+  loadNextFixture();
+  loadTopScorer();
+</script>
 
 </body>
 </html>
