@@ -76,8 +76,7 @@
   import { supabase } from "./supabase.js";
 
   // ⭐ Load next fixture once on page load
-  async function loadNextFixture() {
-  // Get ALL fixtures for Sharks (same RPC as Team Fixtures)
+ async function loadNextFixture() {
   const { data, error } = await supabase.rpc("get_fixtures_by_team", {
     team: "Sharks"
   });
@@ -89,19 +88,26 @@
     return;
   }
 
-  // Convert dates and filter to future fixtures
+  // Convert "Wednesday 23-09-2026" → real Date
+  function parseFixtureDate(str) {
+    const parts = str.split(" ");
+    const datePart = parts[1]; // "23-09-2026"
+    const [day, month, year] = datePart.split("-");
+    return new Date(`${year}-${month}-${day}`);
+  }
+
   const today = new Date();
 
   const futureFixtures = data
-    .filter(f => new Date(f.game_date) >= today)
-    .sort((a, b) => new Date(a.game_date) - new Date(b.game_date));
+    .map(f => ({ ...f, parsedDate: parseFixtureDate(f.game_date) }))
+    .filter(f => f.parsedDate >= today)
+    .sort((a, b) => a.parsedDate - b.parsedDate);
 
   if (futureFixtures.length === 0) {
     el.textContent = "No upcoming fixtures found.";
     return;
   }
 
-  // Take the next one
   const next = futureFixtures[0];
 
   el.textContent =
