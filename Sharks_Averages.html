@@ -82,14 +82,22 @@
       }
     }
 
-    for (const row of scores) {
+   function parseGameDate(str) {
+  const parts = str.split(" ");
+  const datePart = parts[1];
+  const [day, month, year] = datePart.split("-");
+  return `${year}-${month}-${day}`;
+}
+
+for (const row of scores) {
+  const parsedDate = parseGameDate(row.GameDate);
+
   const { data: fx } = await supabase.rpc("get_sharks_fixture", {
-    game_date: row.GameDate
+    game_date: parsedDate
   });
 
   if (!fx || fx.length === 0) continue;
 
-  // ⭐ Pick the correct row (Sharks home or away)
   const fixture = fx.find(f =>
     f.home_team_name === "Sharks" || f.away_team_name === "Sharks"
   );
