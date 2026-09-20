@@ -77,10 +77,9 @@
 
   // ⭐ Load next fixture once on page load
   async function loadNextFixture() {
-    const today = new Date().toISOString().split("T")[0];
-
+    // Always search from earliest possible date
     const { data } = await supabase
-      .rpc("get_next_fixture", { team: "Sharks", from_date: today });
+      .rpc("get_next_fixture", { team: "Sharks", from_date: "1900-01-01" });
 
     const nextFixture = data && data.length > 0 ? data[0] : null;
     const el = document.getElementById("nextFixtureText");
@@ -103,9 +102,12 @@
 
     function addScore(player, balls) {
       const total = balls.reduce((a,b) => a+b, 0);
-      if (!players[player]) players[player] = { games: 0, total: 0 };
-      players[player].games += 1;
-      players[player].total += total;
+
+      if (!players[player]) players[player] = { highest: 0 };
+
+      if (total > players[player].highest) {
+        players[player].highest = total;
+      }
     }
 
     for (const row of scores) {
@@ -136,12 +138,11 @@
     }
 
     const top = Object.entries(players)
-      .map(([name, stats]) => ({ name, avg: stats.total / stats.games }))
-      .sort((a, b) => b.avg - a.avg)[0];
+      .sort((a, b) => b[1].highest - a[1].highest)[0];
 
     const el = document.getElementById("topScorerText");
     el.textContent = top
-      ? `${top.name} – Average ${top.avg.toFixed(2)}`
+      ? `${top[0]} – Highest Score ${top[1].highest}`
       : "No scores available yet.";
   }
 
