@@ -121,6 +121,16 @@
     .from("Sharks_scores")
     .select("*");
 
+  // ⭐ Get fixtures so we can look up alleys
+  const { data: fixtures } = await supabase.rpc("get_fixtures_by_team", {
+    team: "Sharks"
+  });
+
+  const alleyLookup = {};
+  fixtures.forEach(f => {
+    alleyLookup[f.game_date] = f.alley;
+  });
+
   const players = {};
 
   function addScore(player, balls, alley) {
@@ -130,18 +140,19 @@
 
     if (total > players[player].highest) {
       players[player].highest = total;
-      players[player].alley = alley;   // ⭐ store alley of best score
+      players[player].alley = alley;
     }
   }
 
   for (const row of scores) {
+    const alley = alleyLookup[row.GameDate];   // ⭐ Correct alley
+
     const { data: fx } = await supabase.rpc("get_sharks_fixture", {
       game_date: row.GameDate
     });
     if (!fx || fx.length === 0) continue;
 
     const fixture = fx[0];
-    const alley = fixture.alley;   // ⭐ this is the alley we want
 
     const home = fixture.home_team_name;
     const away = fixture.away_team_name;
@@ -167,7 +178,7 @@
   // ⭐ Sort by highest single-game score
   const sorted = Object.entries(players)
     .sort((a, b) => b[1].highest - a[1].highest)
-    .slice(0, 3); // ⭐ Top 3
+    .slice(0, 3);
 
   const el = document.getElementById("topScorerText");
 
@@ -176,13 +187,13 @@
     return;
   }
 
-  // ⭐ Multi-line banner including alley
   el.innerHTML = sorted
     .map(([name, stats], i) =>
       `${i+1}. ${name} – ${stats.highest} (at ${stats.alley})`
     )
     .join("<br>");
 }
+
 
   // ⭐ Run both once
   loadNextFixture();
