@@ -76,135 +76,75 @@
   import { supabase } from "./supabase.js";
 
   // ⭐ Load next fixture once on page load
- async function loadNextFixture() {
-  const { data, error } = await supabase.rpc("get_fixtures_by_team", {
-    team: "Sharks"
-  });
+  async function loadNextFixture() {
+    // Always search from earliest possible date
+    const { data } = await supabase
+      .rpc("get_next_fixture", { team: "Sharks", from_date: "1900-01-01" });
 
-  const el = document.getElementById("nextFixtureText");
+    const nextFixture = data && data.length > 0 ? data[0] : null;
+    const el = document.getElementById("nextFixtureText");
 
-  if (error || !data || data.length === 0) {
-    el.textContent = "No upcoming fixtures found.";
-    return;
+    if (nextFixture) {
+      el.textContent =
+        `${nextFixture.game_date} – ${nextFixture.home_away} at ${nextFixture.alley} vs ${nextFixture.opposition}`;
+    } else {
+      el.textContent = "No upcoming fixtures found.";
+    }
   }
-
-  // Convert "Wednesday 23-09-2026" → real Date
-  function parseFixtureDate(str) {
-    const parts = str.split(" ");
-    const datePart = parts[1]; // "23-09-2026"
-    const [day, month, year] = datePart.split("-");
-    return new Date(`${year}-${month}-${day}`);
-  }
-
-  const today = new Date();
-
-  const futureFixtures = data
-    .map(f => ({ ...f, parsedDate: parseFixtureDate(f.game_date) }))
-    .filter(f => f.parsedDate >= today)
-    .sort((a, b) => a.parsedDate - b.parsedDate);
-
-  if (futureFixtures.length === 0) {
-    el.textContent = "No upcoming fixtures found.";
-    return;
-  }
-
-  const next = futureFixtures[0];
-
-  el.textContent =
-    `${next.game_date} – ${next.home_away} at ${next.alley} vs ${next.opposition}`;
-}
-
 
   // ⭐ Load current top scorer once on page load
- async function loadTopScorer() {
-  const { data: scores } = await supabase
-    .from("Sharks_scores")
-    .select("*");
+  async function loadTopScorer() {
+    const { data: scores } = await supabase
+      .from("Sharks_scores")
+      .select("*");
 
-  const players = {};
+    const players = {};
 
-  function addScore(player, balls, alley) {
-    const total = balls.reduce((a,b) => a+b, 0);
+    function addScore(player, balls) {
+      const total = balls.reduce((a,b) => a+b, 0);
 
-    if (!players[player]) players[player] = { highest: 0, alley: "" };
+      if (!players[player]) players[player] = { highest: 0 };
 
-    if (total > players[player].highest) {
-      players[player].highest = total;
-      players[player].alley = alley;
-    }
-  }
-
-  for (const row of scores) {
-    const { data: fx } = await supabase.rpc("get_sharks_fixture", {
-      game_date: row.GameDate
-    });
-    if (!fx || fx.length === 0) continue;
-
-    const fixture = fx[0];
-
-    const home = fixture.home_team_name;
-    const away = fixture.away_team_name;
-
-    const sharksHome = home === "Sharks";
-    const sharksAway = away === "Sharks";
-
-    const alley = sharksHome
-      ? fixture.home_alley
-      : fixture.away_alley;
-
-    if (sharksHome) {
-      addScore(row.Home_Player, [
-        row.HomeBall1, row.HomeBall2, row.HomeBall3, row.HomeBall4,
-        row.HomeBall5, row.HomeBall6, row.HomeBall7, row.HomeBall8
-      ], alley);
+      if (total > players[player].highest) {
+        players[player].highest = total;
+      }
     }
 
-    if (sharksAway) {
-      addScore(row.Away_Player, [
-        row.AwayBall1, row.AwayBall2, row.AwayBall3, row.AwayBall4,
-        row.AwayBall5, row.AwayBall6, row.AwayBall7, row.AwayBall8
-      ], alley);
+    for (const row of scores) {
+      const { data: fx } = await supabase.rpc("get_sharks_fixture", {
+        game_date: row.GameDate
+      });
+      if (!fx || fx.length === 0) continue;
+
+      const home = fx[0].home_team_name;
+      const away = fx[0].away_team_name;
+
+      const sharksHome = home === "Sharks";
+      const sharksAway = away === "Sharks";
+
+      if (sharksHome) {
+        addScore(row.Home_Player, [
+          row.HomeBall1, row.HomeBall2, row.HomeBall3, row.HomeBall4,
+          row.HomeBall5, row.HomeBall6, row.HomeBall7, row.HomeBall8
+        ]);
+      }
+
+      if (sharksAway) {
+        addScore(row.Away_Player, [
+          row.AwayBall1, row.AwayBall2, row.AwayBall3, row.AwayBall4,
+          row.AwayBall5, row.AwayBall6, row.AwayBall7, row.AwayBall8
+        ]);
+      }
     }
+
+    const top = Object.entries(players)
+      .sort((a, b) => b[1].highest - a[1].highest)[0];
+
+    const el = document.getElementById("topScorerText");
+    el.textContent = top
+      ? `${top[0]} – Highest Score ${top[1].highest}`
+      : "No scores available yet.";
   }
-
-  const sorted = Object.entries(players)
-    .sort((a, b) => b[1].highest - a[1].highest)
-    .slice(0, 3);
-
-  const el = document.getElementById("topScorerText");
-
-  if (sorted.length === 0) {
-    el.textContent = "No scores available yet.";
-    return;
-  }
-
-  el.innerHTML = sorted
-    .map(([name, stats], i) =>
-      `${i+1}. ${name} – ${stats.highest} (at ${stats.alley})`
-    )
-    .join("<br>");
-}
-
-
-  // ⭐ Sort by highest single-game score
-  const sorted = Object.entries(players)
-    .sort((a, b) => b[1].highest - a[1].highest)
-    .slice(0, 3);
-
-  const el = document.getElementById("topScorerText");
-
-  if (sorted.length === 0) {
-    el.textContent = "No scores available yet.";
-    return;
-  }
-
-  el.innerHTML = sorted
-    .map(([name, stats], i) =>
-      `${i+1}. ${name} – ${stats.highest} (at ${stats.alley})`
-    )
-    .join("<br>");
-}
-
 
   // ⭐ Run both once
   loadNextFixture();
