@@ -168,33 +168,63 @@
     `).join("");
   }
 
-  async function loadDivision3() {
-    const tbody = document.getElementById("division3Body");
+async function loadDivision3() {
+  const tbody = document.getElementById("division3Body");
 
-    const { data, error } = await supabase.functions.invoke("division3_table");
+  try {
+    const html = await fetch("tmsl-2021-2022.html").then(r => r.text());
 
-    if (error) {
-      console.error(error);
-      return tbody.innerHTML = `<tr><td colspan="5">Unable to load Division 3 table</td></tr>`;
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    const rows = [...doc.querySelectorAll("tr")];
+
+    const division3Teams = [
+      "Missorts", "Turncoats", "Magpies", "Dumbleton C C", "Monks",
+      "Beechmen", "Yokels", "Sharks", "Beckford S C", "Misfits", "Playboys"
+    ];
+
+    const division3 = [];
+
+    for (const tr of rows) {
+      const cells = [...tr.querySelectorAll("td")].map(td => td.textContent.trim());
+      const teamIndex = cells.findIndex(c => division3Teams.includes(c));
+      if (teamIndex === -1) continue;
+
+      division3.push({
+        team: cells[teamIndex],
+        played: cells[teamIndex + 1] || "",
+        won: cells[teamIndex + 2] || "",
+        drawn: cells[teamIndex + 3] || "",
+        points: cells[teamIndex + 8] || ""
+      });
     }
 
-    tbody.innerHTML = data.map(row => `
+    tbody.innerHTML = division3.map(r => `
       <tr>
-        <td>${row.team}</td>
-        <td>${row.played}</td>
-        <td>${row.won}</td>
-        <td>${row.drawn}</td>
-        <td>${row.points}</td>
+        <td>${r.team}</td>
+        <td>${r.played}</td>
+        <td>${r.won}</td>
+        <td>${r.drawn}</td>
+        <td>${r.points}</td>
       </tr>
     `).join("");
-  }
 
-  // Run everything
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML = `<tr><td colspan="5">Error loading Division 3</td></tr>`;
+  }
+}
+
+
+
+  // ⭐ Run everything once
   loadNextFixture();
   loadTopScorers();
   loadLeagueTable();
   loadDivision3();
 </script>
+
 
 </body>
 </html>
