@@ -2,7 +2,7 @@ name: Update TMSL Results
 
 on:
   schedule:
-    - cron: "15 22 * * *"   # Runs every day at 03:00 UK time
+    - cron: "20 21 * * *"   # Runs every day at 03:00 UK time
   workflow_dispatch:       # Allows manual run
 
 jobs:
