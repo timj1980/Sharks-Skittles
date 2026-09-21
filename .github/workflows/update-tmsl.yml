@@ -2,8 +2,11 @@ name: Update TMSL Results
 
 on:
   schedule:
-    - cron: "35 21 * * *"
+    - cron: "00 03 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   update:
