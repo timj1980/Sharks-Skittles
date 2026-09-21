@@ -4,13 +4,11 @@
   <meta charset="UTF-8" />
   <title>Sharks Skittles League</title>
 
-  <!-- Shared styles including GitHub-style tabs -->
   <link rel="stylesheet" href="style.css" />
 
   <style>
     body { font-family: Arial; margin: 20px; }
 
-    /* Banner styling */
     .banner {
       background: #f6f8fa;
       border: 1px solid #d0d7de;
@@ -68,13 +66,61 @@
 
 <!-- Top Scorer Banner -->
 <section class="banner top-scorer">
-  <h2>Current Top Scorer</h2>
-  <p id="topScorerText">Loading top scorer...</p>
+  <h2>Top 3 Scorers</h2>
+  <p id="topScorerText">Loading top scorers...</p>
 </section>
 
 <script type="module">
   import { supabase } from "./supabase.js";
 
+<<<<<<< HEAD
+  // ⭐ Load next fixture
+  async function loadNextFixture() {
+    const el = document.getElementById("nextFixtureText");
+
+    const { data, error } = await supabase.rpc("get_next_sharks_fixture");
+
+    if (error) {
+      el.textContent = "Error loading fixture.";
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      el.textContent = "No upcoming fixtures found.";
+      return;
+    }
+
+    const fx = data[0];
+
+    el.textContent =
+      `${fx.game_date} – ${fx.home_away} at ${fx.alley} vs ${fx.opposition}`;
+  }
+
+  // ⭐ Load top 3 scorers
+  async function loadTopScorers() {
+    const el = document.getElementById("topScorerText");
+
+    const { data, error } = await supabase.rpc("get_top_sharks_scorers");
+
+    if (error) {
+      el.textContent = "Error loading scorers.";
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      el.textContent = "No scores available yet.";
+      return;
+    }
+
+    // Build a readable list
+    const lines = data.map(
+      row => `${row.player_name} – ${row.highest_score}`
+    );
+
+    el.textContent = lines.join(" | ");
+  }
+
+=======
   // ⭐ Load next fixture once on page load
   async function loadNextFixture() {
     // Always search from earliest possible date
@@ -146,9 +192,13 @@
       : "No scores available yet.";
   }
 
+<<<<<<< Updated upstream
+=======
+>>>>>>> b7122854a67330a5742d520dc668b038142a7987
+>>>>>>> Stashed changes
   // ⭐ Run both once
   loadNextFixture();
-  loadTopScorer();
+  loadTopScorers();
 </script>
 
 </body>
