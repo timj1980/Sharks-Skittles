@@ -113,10 +113,10 @@
 
     // Build readable list
     const lines = data.map(
-      row => `${row.player_name} – ${row.highest_score} (${row.alley})<br>`
+      row => `${row.player_name} – ${row.highest_score} (${row.alley})`
     );
 
-    el.textContent = lines.join(" | ");
+    el.innerHTML = lines.join("<br>");
   }
 
   // ⭐ Run both once
