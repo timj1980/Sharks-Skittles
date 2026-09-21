@@ -1,43 +1,33 @@
-/* Global system font */
+/* --- Global system font --- */
 html, body {
   font-family: system-ui, sans-serif;
 }
 
-/* Make table full width */
+/* --- Global table behaviour --- */
 table {
-  width: 100%;
-  border-collapse: collapse; /* ensures clean lines */
+  width: auto;                 /* auto-size instead of full width */
+  border-collapse: collapse;
 }
 
-/* Left-align headings and cells */
 th, td {
   text-align: left;
   padding: 8px;
-}
-
-/* Add lines between columns and rows */
-th, td {
   border: 1px solid #ccc;
 }
 
-/* Optional: make headings stand out */
 th {
   background-color: #f4f4f4;
   font-weight: bold;
 }
 
-<div id="nav-placeholder"></div>
-
 /* --- GitHub-style tab bar --- */
-
 .gh-tabs {
   border-bottom: 1px solid #d0d7de;
   background: #f6f8fa;
   padding: 0 16px;
-
-  /* ⭐ Force consistent system font */
   font-family: system-ui, sans-serif;
 }
+
 .gh-tabs ul {
   list-style: none;
   margin: 0;
@@ -66,7 +56,6 @@ th {
 }
 
 /* --- Sharks logo in tab bar --- */
-
 .gh-left {
   display: flex;
   align-items: center;
@@ -86,7 +75,6 @@ th {
 }
 
 /* --- Index page banners --- */
-
 .banner {
   background: #f6f8fa;
   border: 1px solid #d0d7de;
@@ -105,3 +93,70 @@ th {
   font-size: 18px;
   margin: 8px 0 0;
 }
+
+/* --- League Table (same style as other tables, but compact) --- */
+
+#leagueTable table {
+  width: auto;                 /* do not stretch */
+  border-collapse: collapse;
+  margin: 0;                   /* align left */
+}
+
+#leagueTable th,
+#leagueTable td {
+  padding: 8px;                /* match other tables */
+  text-align: left;            /* match other tables */
+  font-size: 0.85rem;          /* slightly smaller text */
+}
+
+/* Shrink columns */
+#leagueTable th:nth-child(1),
+#leagueTable td:nth-child(1) {
+  width: 80px;
+}
+
+#leagueTable th:nth-child(2),
+#leagueTable td:nth-child(2) {
+  width: 60px;
+}
+
+#leagueTable th:nth-child(3),
+#leagueTable td:nth-child(3),
+#leagueTable th:nth-child(4),
+#leagueTable td:nth-child(4),
+#leagueTable th:nth-child(5),
+#leagueTable td:nth-child(5),
+#leagueTable th:nth-child(6),
+#leagueTable td:nth-child(6),
+#leagueTable th:nth-child(7),
+#leagueTable td:nth-child(7) {
+  width: 50px;
+}
+}
+
+#division3 table {
+  width: auto;
+  border-collapse: collapse;
+}
+
+#division3 th,
+#division3 td {
+  padding: 8px;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+#division3 th:nth-child(1),
+#division3 td:nth-child(1) { width: 140px; }
+
+#division3 th:nth-child(2),
+#division3 td:nth-child(2),
+#division3 th:nth-child(3),
+#division3 td:nth-child(3),
+#division3 th:nth-child(4),
+#division3 td:nth-child(4),
+#division3 th:nth-child(5),
+#division3 td:nth-child(5) {
+  width: 60px;
+}
+

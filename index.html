@@ -38,7 +38,7 @@
 <script>
   // Load shared nav
   fetch("Nav.html")
-    .then(response => response.text())
+    .then(r => r.text())
     .then(html => {
       document.getElementById("nav-placeholder").innerHTML = html;
       initNav();
@@ -46,17 +46,16 @@
 
   function initNav() {
     const page = window.location.pathname.split("/").pop().toLowerCase();
-
     document.querySelectorAll(".gh-tabs a").forEach(link => {
-      const href = link.getAttribute("href").toLowerCase();
-      if (href.includes(page)) {
+      if (link.getAttribute("href").toLowerCase().includes(page)) {
         link.classList.add("active");
       }
     });
   }
 </script>
 
-<h1>Sharks Skittles League</h1>
+<h1>Tewkesbury Winter Skittles League</h1>
+<h1>Team: Sharks</h1>
 
 <!-- Next Fixture Banner -->
 <section class="banner next-fixture">
@@ -70,65 +69,131 @@
   <p id="topScorerText">Loading top scorers...</p>
 </section>
 
+<!-- League Table -->
+<section id="leagueTable" class="banner">
+  <h2>League Points</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Matches Played</th>
+        <th>Front</th>
+        <th>Middle</th>
+        <th>Back</th>
+        <th>Game</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody id="leagueTableBody"></tbody>
+  </table>
+</section>
+
+<!-- Division 3 Table -->
+<section id="division3" class="banner">
+  <h2>Division 3 League Table</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Team</th>
+        <th>Played</th>
+        <th>Won</th>
+        <th>Drawn</th>
+        <th>Points</th>
+      </tr>
+    </thead>
+    <tbody id="division3Body"></tbody>
+  </table>
+</section>
+
+<!-- ⭐ Single clean module block -->
 <script type="module">
   import { supabase } from "./supabase.js";
-  
-  function formatDate(d) {
-  const date = new Date(d);
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-}
-  // ⭐ Load next fixture
+
+  const season = "2026/27";
+  const teamId = 12;
+  const division = "Division 3";
+
+  const formatDate = d => {
+    const date = new Date(d);
+    return `${String(date.getDate()).padStart(2,"0")}/${String(date.getMonth()+1).padStart(2,"0")}/${date.getFullYear()}`;
+  };
+
   async function loadNextFixture() {
     const el = document.getElementById("nextFixtureText");
 
-    const { data, error } = await supabase.rpc("get_next_sharks_fixture");
+    const { data, error } = await supabase.rpc("get_next_team_fixture", {
+      team_id: teamId,
+      season,
+      division
+    });
 
-    if (error) {
-      el.textContent = "Error loading fixture.";
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      el.textContent = "No upcoming fixtures found.";
-      return;
-    }
+    if (error) return el.textContent = "Error loading fixture.";
+    if (!data?.length) return el.textContent = "No upcoming fixtures found.";
 
     const fx = data[0];
-
-    el.textContent =
-      `${formatDate(fx.game_date)} – ${fx.home_away} at ${fx.alley} vs ${fx.opposition}`;
+    el.textContent = `${formatDate(fx.game_date)} – ${fx.home_away} at ${fx.alley} vs ${fx.opposition}`;
   }
 
-  // ⭐ Load top 3 scorers
   async function loadTopScorers() {
     const el = document.getElementById("topScorerText");
 
-    const { data, error } = await supabase.rpc("get_top_sharks_scorers");
+    const { data, error } = await supabase.rpc("get_top_sharks_scorers", { season });
 
-    if (error) {
-      el.textContent = "Error loading scorers.";
-      return;
-    }
+    if (error) return el.textContent = "Error loading scorers.";
+    if (!data?.length) return el.textContent = "No scores available yet.";
 
-    if (!data || data.length === 0) {
-      el.textContent = "No scores available yet.";
-      return;
-    }
-
-    // Build readable list
-    const lines = data.map(
-      row => `${row.player_name} – ${row.highest_score} (${row.alley})`
-    );
-
-    el.innerHTML = lines.join("<br>");
+    el.innerHTML = data.map(r => `${r.player_name} – ${r.highest_score} (${r.alley})`).join("<br>");
   }
 
-  // ⭐ Run both once
+  async function loadLeagueTable() {
+    const tbody = document.getElementById("leagueTableBody");
+
+    const { data, error } = await supabase.rpc("get_sharks_league_table", { season });
+
+    if (error) {
+      console.error(error);
+      return tbody.innerHTML = `<tr><td colspan="7">Unable to load league table</td></tr>`;
+    }
+
+    tbody.innerHTML = data.map(row => `
+      <tr>
+        <td>${row.type}</td>
+        <td>${row.matches_played}</td>
+        <td>${row.front_points}</td>
+        <td>${row.middle_points}</td>
+        <td>${row.back_points}</td>
+        <td>${row.game_points}</td>
+        <td>${row.total_points}</td>
+      </tr>
+    `).join("");
+  }
+
+  async function loadDivision3() {
+    const tbody = document.getElementById("division3Body");
+
+    const { data, error } = await supabase.functions.invoke("division3_table");
+
+    if (error) {
+      console.error(error);
+      return tbody.innerHTML = `<tr><td colspan="5">Unable to load Division 3 table</td></tr>`;
+    }
+
+    tbody.innerHTML = data.map(row => `
+      <tr>
+        <td>${row.team}</td>
+        <td>${row.played}</td>
+        <td>${row.won}</td>
+        <td>${row.drawn}</td>
+        <td>${row.points}</td>
+      </tr>
+    `).join("");
+  }
+
+  // Run everything
   loadNextFixture();
   loadTopScorers();
+  loadLeagueTable();
+  loadDivision3();
 </script>
 
 </body>
