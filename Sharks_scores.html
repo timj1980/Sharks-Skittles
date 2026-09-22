@@ -73,13 +73,24 @@
 <div id="totals"></div>
 
 <script type="module">
+function highlightScore(score) {
+  return score > 9 
+    ? `<span class="spare_cell">${score}</span>` 
+    : score;
+}
+
+function highlightCell(score) {
+  return score > 9
+    ? `<td class="spare_cell">${score}</td>`
+    : `<td>${score}</td>`;
+}
   import { supabase } from "./supabase.js";
 
   async function loadMatches() {
     const { data: scores } = await supabase
       .from("Sharks_scores")
       .select("*")
-      .order("GameDate", { ascending: true });
+      .order("GameDate", { ascending: false });
 
     const matchSelect = document.getElementById("matchSelect");
 
@@ -188,10 +199,10 @@ document.getElementById("AwayTeam").innerHTML =
       tr.innerHTML = `
         
         <td>${row.Home_Player}</td>
-        ${homeBalls.map(b => `<td>${b}</td>`).join("")}
+        ${homeBalls.map(b => highlightCell(b)).join("")}
         <td><strong>${homeTotal}</strong></td>
         <td>${row.Away_Player}</td>
-        ${awayBalls.map(b => `<td>${b}</td>`).join("")}
+        ${awayBalls.map(b => highlightCell(b)).join("")}
         <td><strong>${awayTotal}</strong></td>
       `;
       tbody.appendChild(tr);

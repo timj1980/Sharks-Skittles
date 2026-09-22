@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
 
   <title>Sharks – Player Averages</title>
-<!-- Load shared styles including GitHub-style tabs -->
   <link rel="stylesheet" href="style.css" />
   <style>
     body { font-family: Arial; margin: 20px; }
@@ -35,8 +34,7 @@
   }
 </script>
 
-
-<h1>Sharks – Player Averages</h1>
+<h1>Sharks – Player Stats</h1>
 
 <table id="avgTable">
   <thead>
@@ -45,6 +43,7 @@
       <th>Games</th>
       <th>Highest Score</th>
       <th>Average</th>
+      <th>Spares</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -63,13 +62,15 @@
 
     function addScore(player, balls) {
       const total = balls.reduce((a,b) => a+b, 0);
+      const spares = balls.filter(b => b > 9).length;
 
       if (!players[player]) {
-        players[player] = { games: 0, total: 0, highest: 0 };
+        players[player] = { games: 0, total: 0, highest: 0, spares: 0 };
       }
 
       players[player].games += 1;
       players[player].total += total;
+      players[player].spares += spares;
 
       if (total > players[player].highest) {
         players[player].highest = total;
@@ -77,7 +78,6 @@
     }
 
     for (const row of scores) {
-      // ⭐ Determine if Sharks were home or away using RPC
       const { data: fx } = await supabase.rpc("get_sharks_fixture", {
         game_date: row.GameDate
       });
@@ -108,7 +108,6 @@
     const tbody = document.querySelector("#avgTable tbody");
     tbody.innerHTML = "";
 
-    // ⭐ Sort by highest average
     const sortedPlayers = Object.entries(players)
       .sort((a, b) => (b[1].total / b[1].games) - (a[1].total / a[1].games));
 
@@ -121,6 +120,7 @@
         <td>${stats.games}</td>
         <td>${stats.highest}</td>
         <td>${avg}</td>
+        <td>${stats.spares}</td>
       `;
       tbody.appendChild(tr);
     });
