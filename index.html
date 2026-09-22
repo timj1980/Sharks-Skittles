@@ -27,6 +27,19 @@
       font-size: 18px;
       margin: 8px 0 0;
     }
+
+    /* Sharks highlight */
+    .highlight-sharks {
+      background-color: #0044aa;
+      color: white;
+      font-weight: bold;
+    }
+
+    /* Promotion highlight */
+    .promotion-row {
+      background-color: #c8f7c5;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -75,18 +88,26 @@
   <table>
     <thead>
       <tr>
+        <th>Pos</th>
         <th>Team</th>
         <th>Played</th>
         <th>Won</th>
         <th>Drawn</th>
+        <th>Set 1</th>
+        <th>Set 2</th>
+        <th>Set 3</th>
+        <th>Set D</th>
+
         <th>Points</th>
+
       </tr>
     </thead>
     <tbody id="division3Body"></tbody>
   </table>
+  * Data From <a href = "http://www.tmsl.me.uk/league_results.html"> Tewkesbury Mens Skittle League league page </a> 
 </section>
 
-<!-- ⭐ Single clean module block -->
+<!-- ⭐ Main module -->
 <script type="module">
   import { supabase } from "./supabase.js";
 
@@ -149,63 +170,74 @@
     `).join("");
   }
 
-async function loadDivision3() {
-  const tbody = document.getElementById("division3Body");
+  async function loadDivision3() {
+    const tbody = document.getElementById("division3Body");
 
-  try {
-    const html = await fetch("tmsl-2021-2022.html").then(r => r.text());
+    try {
+      const html = await fetch("tmsl-2021-2022.html").then(r => r.text());
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
+      const rows = [...doc.querySelectorAll("tr")];
 
-    const rows = [...doc.querySelectorAll("tr")];
+      const division3Teams = [
+        "Missorts", "Turncoats", "Magpies", "Dumbleton C C", "Monks",
+        "Beechmen", "Yokels", "Sharks", "Beckford S C", "Misfits", "Playboys"
+      ];
 
-    const division3Teams = [
-      "Missorts", "Turncoats", "Magpies", "Dumbleton C C", "Monks",
-      "Beechmen", "Yokels", "Sharks", "Beckford S C", "Misfits", "Playboys"
-    ];
+      const division3 = [];
 
-    const division3 = [];
+      for (const tr of rows) {
+        const cells = [...tr.querySelectorAll("td")].map(td => td.textContent.trim());
+        const teamIndex = cells.findIndex(c => division3Teams.includes(c));
+        if (teamIndex === -1) continue;
 
-    for (const tr of rows) {
-      const cells = [...tr.querySelectorAll("td")].map(td => td.textContent.trim());
-      const teamIndex = cells.findIndex(c => division3Teams.includes(c));
-      if (teamIndex === -1) continue;
+        division3.push({
+          team: cells[teamIndex],
+          played: cells[teamIndex + 1] || "",
+          won: cells[teamIndex + 2] || "",
+          drawn: cells[teamIndex + 3] || "",
+	  Set1: cells[teamIndex + 4] || "",
+          Set2: cells[teamIndex + 5] || "",
+	  Set3: cells[teamIndex + 6] || "",
+	  SetD: cells[teamIndex + 7] || "",
+          points: cells[teamIndex + 8] || "",
+          highlight: cells[teamIndex] === "Sharks",
+          position: division3.length + 1,
+          promotion: division3.length < 2
+        });
+      }
 
-      division3.push({
-        team: cells[teamIndex],
-        played: cells[teamIndex + 1] || "",
-        won: cells[teamIndex + 2] || "",
-        drawn: cells[teamIndex + 3] || "",
-        points: cells[teamIndex + 8] || ""
-      });
+      tbody.innerHTML = division3.map(r => `
+        <tr class="${r.highlight ? 'highlight-sharks' : ''} ${r.promotion ? 'promotion-row' : ''}">
+          <td>${r.position}</td>
+          <td>${r.team}</td>
+          <td>${r.played}</td>
+          <td>${r.won}</td>
+          <td>${r.drawn}</td>
+	  <td>${r.Set1}</td>
+	  <td>${r.Set2}</td>
+	  <td>${r.Set3}</td>
+          <td>${r.SetD}</td>
+
+
+
+          <td>${r.points}</td>
+        </tr>
+      `).join("");
+
+    } catch (err) {
+      console.error(err);
+      tbody.innerHTML = `<tr><td colspan="6">Error loading Division 3</td></tr>`;
     }
-
-    tbody.innerHTML = division3.map(r => `
-      <tr>
-        <td>${r.team}</td>
-        <td>${r.played}</td>
-        <td>${r.won}</td>
-        <td>${r.drawn}</td>
-        <td>${r.points}</td>
-      </tr>
-    `).join("");
-
-  } catch (err) {
-    console.error(err);
-    tbody.innerHTML = `<tr><td colspan="5">Error loading Division 3</td></tr>`;
   }
-}
 
-
-
-  // ⭐ Run everything once
+  // Run everything
   loadNextFixture();
   loadTopScorers();
   loadLeagueTable();
   loadDivision3();
 </script>
-
 
 </body>
 </html>

@@ -160,3 +160,26 @@ th {
   width: 60px;
 }
 
+.highlight-sharks {
+  background-color: #0044aa;
+  color: white;
+  font-weight: bold;
+}
+
+.promotion-row {
+  background-color: #c8f7c5; /* soft green */
+  font-weight: bold;
+}
+
+/* Make position column small */
+#division3 table td:nth-child(1),
+#division3 table th:nth-child(1) {
+  width: 40px;
+  text-align: center;
+}
+
+/* Make team column wider */
+#division3 table td:nth-child(2),
+#division3 table th:nth-child(2) {
+  width: 180px;
+}
