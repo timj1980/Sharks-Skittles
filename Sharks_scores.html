@@ -46,16 +46,20 @@
 
 <h1>Sharks – Game Results</h1>
 
-<div id="teamNames"></div>
-
 <label><strong>Select Match:</strong></label>
 <select id="matchSelect"></select>
 
 <table id="matchTable">
   <thead>
     <tr>
-      <th>Hand</th>
-      <th>Home Player</th>
+      
+      <th colspan="10"><div id="HomeTeam"></div></th>
+      
+      <th colspan="10"><div id="AwayTeam"></div></th>
+      
+    </tr>
+     <tr>
+      <th>Away Player</th>
       <th colspan="8">Home Balls</th>
       <th>Total</th>
       <th>Away Player</th>
@@ -140,8 +144,14 @@
       awayTeamName = fx[0].away_team_name;
     }
 
-    document.getElementById("teamNames").innerHTML =
-      `<h2>${homeTeamName} vs ${awayTeamName}</h2>`;
+    
+
+document.getElementById("HomeTeam").innerHTML =
+      `${homeTeamName}`;
+
+document.getElementById("AwayTeam").innerHTML =
+      `${awayTeamName}`;
+
 
     let frontHome = 0, frontAway = 0;
     let middleHome = 0, middleAway = 0;
@@ -176,7 +186,7 @@
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${row.Hand}</td>
+        
         <td>${row.Home_Player}</td>
         ${homeBalls.map(b => `<td>${b}</td>`).join("")}
         <td><strong>${homeTotal}</strong></td>
