@@ -28,28 +28,29 @@
       margin: 8px 0 0;
     }
 
-    /* Sharks highlight */
     .highlight-sharks {
       background-color: #0044aa;
       color: white;
       font-weight: bold;
     }
 
-    /* Promotion highlight */
     .promotion-row {
       background-color: #c8f7c5;
       font-weight: bold;
+    }
+
+    table th, table td {
+      padding: 6px;
+      text-align: left;
     }
   </style>
 </head>
 
 <body>
 
-<!-- Shared navigation -->
 <div id="nav-placeholder"></div>
 
 <script>
-  // Load shared nav
   fetch("Nav.html")
     .then(r => r.text())
     .then(html => {
@@ -70,19 +71,28 @@
 <h1>Tewkesbury Winter Skittles League</h1>
 <h1>Team: Sharks</h1>
 
-<!-- Next Fixture Banner -->
 <section class="banner next-fixture">
   <h2>Next Fixture</h2>
   <p id="nextFixtureText">Loading next fixture...</p>
 </section>
 
-<!-- Top Scorer Banner -->
+<!-- ⭐ UPDATED TOP SCORERS TABLE -->
 <section class="banner top-scorer">
   <h2>Top 3 Scorers</h2>
-  <p id="topScorerText">Loading top scorers...</p>
+
+  <table style="width:100%; border-collapse: collapse; margin-top:10px;">
+    <thead>
+      <tr>
+        <th>Player</th>
+        <th>Score</th>
+        <th>Opposition</th>
+        <th>Alley</th>
+      </tr>
+    </thead>
+    <tbody id="topScorerBody"></tbody>
+  </table>
 </section>
 
-<!-- Division 3 Table -->
 <section id="division3" class="banner">
   <h2>Division 3 League Table</h2>
   <table>
@@ -97,17 +107,14 @@
         <th>Set 2</th>
         <th>Set 3</th>
         <th>Set D</th>
-
         <th>Points</th>
-
       </tr>
     </thead>
     <tbody id="division3Body"></tbody>
   </table>
-  * Data From <a href = "http://www.tmsl.me.uk/league_results.html"> Tewkesbury Mens Skittle League league page </a> 
+  * Data From <a href="http://www.tmsl.me.uk/league_results.html">Tewkesbury Mens Skittle League league page</a>
 </section>
 
-<!-- ⭐ Main module -->
 <script type="module">
   import { supabase } from "./supabase.js";
 
@@ -117,7 +124,7 @@
 
   const formatDate = d => {
     const date = new Date(d);
-    return `${String(date.getDate()).padStart(2,"0")}/${String(date.getMonth()+1).padStart(2,"0")}/${date.getFullYear()}`;
+    return `${String(date.getDate()).padStart(2,"0")}/${String(date.getMonth()+1,"0")}/${date.getFullYear()}`;
   };
 
   async function loadNextFixture() {
@@ -136,15 +143,30 @@
     el.textContent = `${formatDate(fx.game_date)} – ${fx.home_away} at ${fx.alley} vs ${fx.opposition}`;
   }
 
+  /* ⭐ UPDATED TOP SCORERS FUNCTION */
   async function loadTopScorers() {
-    const el = document.getElementById("topScorerText");
+    const tbody = document.getElementById("topScorerBody");
 
     const { data, error } = await supabase.rpc("get_top_sharks_scorers", { season });
 
-    if (error) return el.textContent = "Error loading scorers.";
-    if (!data?.length) return el.textContent = "No scores available yet.";
+    if (error) {
+      tbody.innerHTML = `<tr><td colspan="4">Error loading scorers</td></tr>`;
+      return;
+    }
 
-    el.innerHTML = data.map(r => `${r.player_name} – ${r.highest_score} (${r.alley})`).join("<br>");
+    if (!data?.length) {
+      tbody.innerHTML = `<tr><td colspan="4">No scores available yet</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td>${r.player_name}</td>
+        <td>${r.highest_score}</td>
+        <td>${r.opponent_name}</td>
+        <td>${r.alley}</td>
+      </tr>
+    `).join("");
   }
 
   async function loadLeagueTable() {
@@ -197,10 +219,10 @@
           played: cells[teamIndex + 1] || "",
           won: cells[teamIndex + 2] || "",
           drawn: cells[teamIndex + 3] || "",
-	  Set1: cells[teamIndex + 4] || "",
+          Set1: cells[teamIndex + 4] || "",
           Set2: cells[teamIndex + 5] || "",
-	  Set3: cells[teamIndex + 6] || "",
-	  SetD: cells[teamIndex + 7] || "",
+          Set3: cells[teamIndex + 6] || "",
+          SetD: cells[teamIndex + 7] || "",
           points: cells[teamIndex + 8] || "",
           highlight: cells[teamIndex] === "Sharks",
           position: division3.length + 1,
@@ -215,13 +237,10 @@
           <td>${r.played}</td>
           <td>${r.won}</td>
           <td>${r.drawn}</td>
-	  <td>${r.Set1}</td>
-	  <td>${r.Set2}</td>
-	  <td>${r.Set3}</td>
+          <td>${r.Set1}</td>
+          <td>${r.Set2}</td>
+          <td>${r.Set3}</td>
           <td>${r.SetD}</td>
-
-
-
           <td>${r.points}</td>
         </tr>
       `).join("");
@@ -232,7 +251,6 @@
     }
   }
 
-  // Run everything
   loadNextFixture();
   loadTopScorers();
   loadLeagueTable();
