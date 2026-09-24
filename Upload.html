@@ -64,21 +64,34 @@
       color: white;
       border: none;
       border-radius: 8px;
+      cursor: pointer;
     }
 
     .secondary {
       background: #555;
     }
+
+    .hand-total-box {
+      background: #eef2f5;
+      padding: 12px;
+      margin: 15px 0;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1.0rem;
+    }
   </style>
 </head>
+
 <body>
 
 <h1>Sharks Score Entry</h1>
 
+<input type="hidden" id="Season" value="2026/27">
+
 <label>Game Date:</label>
 <input type="date" id="GameDate">
 
-<!-- FRONT HAND (3 players) -->
+<!-- FRONT HAND -->
 <div id="step1" class="step active">
   <h2>Front Hand</h2>
 
@@ -148,10 +161,16 @@
     </div>
   </div>
 
+  <div class="hand-total-box">
+    Front Hand Total: <span id="FrontHandTotal">0</span>
+  </div>
+
+  <div id="FrontHandBreakdown" class="hand-total-box"></div>
+
   <button id="next1">Next: Middle Hand</button>
 </div>
 
-<!-- MIDDLE HAND (3 players) -->
+<!-- MIDDLE HAND -->
 <div id="step2" class="step">
   <h2>Middle Hand</h2>
 
@@ -221,11 +240,16 @@
     </div>
   </div>
 
+  <div class="hand-total-box">
+    Middle Hand Total: <span id="MiddleHandTotal">0</span>
+  </div>
+
+  <div id="MiddleHandBreakdown" class="hand-total-box"></div>
+
   <button class="secondary" id="back1">Back</button>
   <button id="next2">Next: Back Hand</button>
 </div>
-
-<!-- BACK HAND (4 players) -->
+<!-- BACK HAND -->
 <div id="step3" class="step">
   <h2>Back Hand</h2>
 
@@ -317,6 +341,12 @@
     </div>
   </div>
 
+  <div class="hand-total-box">
+    Back Hand Total: <span id="BackHandTotal">0</span>
+  </div>
+
+  <div id="BackHandBreakdown" class="hand-total-box"></div>
+
   <button class="secondary" id="back2">Back</button>
   <button id="submitMatch">Summary</button>
 </div>
@@ -363,6 +393,9 @@
       }
       document.getElementById(`${prefix}_HomeTotal`).textContent = home;
       document.getElementById(`${prefix}_AwayTotal`).textContent = away;
+
+      updateHandTotals();
+      updateBreakdown();
     }
 
     for (let i = 1; i <= 8; i++) {
@@ -377,9 +410,116 @@
     "BH1","BH2","BH3","BH4"
   ].forEach(setupTotals);
 
-  function buildRow(hand, prefix, date) {
+  function updateHandTotals() {
+    const front = ["FH1","FH2","FH3"];
+    const middle = ["MH1","MH2","MH3"];
+    const back = ["BH1","BH2","BH3","BH4"];
+
+    function sum(prefixes) {
+      let total = 0;
+      prefixes.forEach(p => {
+        total += Number(document.getElementById(`${p}_HomeTotal`).textContent) || 0;
+        total += Number(document.getElementById(`${p}_AwayTotal`).textContent) || 0;
+      });
+      return total;
+    }
+
+    document.getElementById("FrontHandTotal").textContent = sum(front);
+    document.getElementById("MiddleHandTotal").textContent = sum(middle);
+    document.getElementById("BackHandTotal").textContent = sum(back);
+  }
+
+  function updateBreakdown() {
+  const groups = {
+    Front: ["FH1","FH2","FH3"],
+    Middle: ["MH1","MH2","MH3"],
+    Back: ["BH1","BH2","BH3","BH4"]
+  };
+
+  function handTotals(prefixes) {
+    let home = 0;
+    let away = 0;
+
+    prefixes.forEach(p => {
+      home += Number(document.getElementById(`${p}_HomeTotal`).textContent) || 0;
+      away += Number(document.getElementById(`${p}_AwayTotal`).textContent) || 0;
+    });
+
+    return { home, away };
+  }
+
+  function runningTotals(currentHand) {
+    let FH = handTotals(groups.Front);
+    let MH = handTotals(groups.Middle);
+    let BH = handTotals(groups.Back);
+
+    if (currentHand === "Front") {
+      return FH;
+    }
+    if (currentHand === "Middle") {
+      return {
+        home: FH.home + MH.home,
+        away: FH.away + MH.away
+      };
+    }
+    if (currentHand === "Back") {
+      return {
+        home: FH.home + MH.home + BH.home,
+        away: FH.away + MH.away + BH.away
+      };
+    }
+  }
+
+  function makeBlock(handName, prefixes) {
+    let thisHand = handTotals(prefixes);
+    let running = runningTotals(handName);
+
+    let html = `
+      <br>
+    `;
+
+    prefixes.forEach(p => {
+      const hp = document.getElementById(`${p}_Home_Player`).value || "";
+      const ap = document.getElementById(`${p}_Away_Player`).value || "";
+      const ht = Number(document.getElementById(`${p}_HomeTotal`).textContent) || 0;
+      const at = Number(document.getElementById(`${p}_AwayTotal`).textContent) || 0;
+
+      html += `${hp}: ${ht}&nbsp;&nbsp;&nbsp;&nbsp;${ap}: ${at}<br>`;
+    });
+
+    html += `
+      <br>
+      Total Hand Home: ${thisHand.home}&nbsp;&nbsp;&nbsp;&nbsp;
+      Total Hand Away: ${thisHand.away}<br><br>
+
+      <strong>Current Game Score</strong><br>
+      Home: ${running.home}&nbsp;&nbsp;&nbsp;&nbsp;Away: ${running.away}
+    `;
+
+    return html;
+  }
+
+  if (document.getElementById("step1").classList.contains("active")) {
+    document.getElementById("FrontHandBreakdown").innerHTML =
+      makeBlock("Front", groups.Front);
+  }
+
+  if (document.getElementById("step2").classList.contains("active")) {
+    document.getElementById("MiddleHandBreakdown").innerHTML =
+      makeBlock("Middle", groups.Middle);
+  }
+
+  if (document.getElementById("step3").classList.contains("active")) {
+    document.getElementById("BackHandBreakdown").innerHTML =
+      makeBlock("Back", groups.Back);
+  }
+}
+
+
+  function buildRow(hand, prefix, date, season) {
     const row = {
       GameDate: date,
+      Season: season,
       Hand: hand,
       Home_Player: document.getElementById(`${prefix}_Home_Player`).value,
       Away_Player: document.getElementById(`${prefix}_Away_Player`).value
@@ -476,20 +616,21 @@
 
   summarySubmit.onclick = async () => {
     const date = document.getElementById("GameDate").value;
+    const season = document.getElementById("Season").value || "2026/27";
 
     const payload = [
-      buildRow("Front", "FH1", date),
-      buildRow("Front", "FH2", date),
-      buildRow("Front", "FH3", date),
+      buildRow("Front", "FH1", date, season),
+      buildRow("Front", "FH2", date, season),
+      buildRow("Front", "FH3", date, season),
 
-      buildRow("Middle", "MH1", date),
-      buildRow("Middle", "MH2", date),
-      buildRow("Middle", "MH3", date),
+      buildRow("Middle", "MH1", date, season),
+      buildRow("Middle", "MH2", date, season),
+      buildRow("Middle", "MH3", date, season),
 
-      buildRow("Back", "BH1", date),
-      buildRow("Back", "BH2", date),
-      buildRow("Back", "BH3", date),
-      buildRow("Back", "BH4", date)
+      buildRow("Back", "BH1", date, season),
+      buildRow("Back", "BH2", date, season),
+      buildRow("Back", "BH3", date, season),
+      buildRow("Back", "BH4", date, season)
     ];
 
     const { data, error } = await supabase
