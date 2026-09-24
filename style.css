@@ -28,6 +28,10 @@ th {
   font-family: system-ui, sans-serif;
 }
 
+input, textarea, select {
+  font-size: 16px;
+}
+
 .gh-tabs ul {
   list-style: none;
   margin: 0;
