@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fixtures Status Overview</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { font-size: 24px; color: #333; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+      font-weight: bold;
+    }
+
+    /* Color Status Classes */
+    .status-has-scores {
+      background-color: #d4edda !important; /* Soft Green */
+      color: #155724;
+    }
+
+    .status-missing-scores {
+      background-color: #f8d7da !important; /* Soft Red */
+      color: #721c24;
+      font-weight: bold;
+    }
+
+    .status-upcoming {
+      background-color: #ffffff !important; /* White */
+      color: #333333;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .badge-green { background: #28a745; color: #fff; }
+    .badge-red { background: #dc3545; color: #fff; }
+    .badge-white { background: #e0e0e0; color: #333; }
+  </style>
+</head>
+
+<body>
+
+<div id="nav-placeholder"></div>
+
+<script>
+  fetch("Nav.html")
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById("nav-placeholder").innerHTML = html;
+    });
+</script>
+
+<h1 id="pageTitle">Team Fixtures & Score Status</h1>
+
+<div style="margin-bottom: 15px;">
+  <span class="badge badge-green">Green = Scores Recorded</span>
+  <span class="badge badge-red" style="margin-left:8px;">Red = Past Match (Missing Scores)</span>
+  <span class="badge badge-white" style="margin-left:8px;">White = Fixture To Play</span>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Venue</th>
+      <th>Opposition</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="fixturesBody">
+    <tr><td colspan="4">Loading fixtures...</td></tr>
+  </tbody>
+</table>
+
+<script type="module">
+  import { supabase } from "./supabase.js";
+
+  // URL parameter check (defaults to "Sharks" if not supplied)
+  const params = new URLSearchParams(window.location.search);
+  let teamName = params.get("team") || "Sharks";
+  document.getElementById("pageTitle").innerText = `${teamName} – Fixtures & Status`;
+
+  // Normalises DD-MM-YYYY or similar strings into YYYY-MM-DD
+  function normaliseDate(str) {
+    if (!str) return "";
+    const match = str.match(/\d{1,2}-\d{1,2}-\d{4}/);
+    if (!match) return str;
+    let [dd, mm, yyyy] = match[0].split("-");
+    if (dd.length === 1) dd = "0" + dd;
+    if (mm.length === 1) mm = "0" + mm;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  async function loadFixturesOverview() {
+    const tbody = document.getElementById("fixturesBody");
+
+    // 1. Fetch all fixtures for the team
+    const { data: fixtures, error: fxErr } = await supabase.rpc("tmsl_get_allfixtures", {
+      team: teamName
+    });
+
+    if (fxErr || !fixtures) {
+      console.error(fxErr);
+      tbody.innerHTML = `<tr><td colspan="4">Error loading fixtures.</td></tr>`;
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Compare date part only
+
+    // 2. Check each fixture for score availability asynchronously
+    const fixtureRows = await Promise.all(
+      fixtures.map(async (fx) => {
+        const isoDate = normaliseDate(fx.game_date);
+        const matchDate = new Date(isoDate);
+
+        let rowClass = "status-upcoming";
+        let statusText = "Upcoming";
+
+        if (matchDate <= today) {
+          // Check if scores exist for this game date
+          const { data: scores } = await supabase.rpc("tmsl_get_match_scores", {
+            team_namein: teamName,
+            game_date: isoDate
+          });
+
+          if (scores && scores.length > 0) {
+            rowClass = "status-has-scores";
+            statusText = "Scores Available";
+          } else {
+            rowClass = "status-missing-scores";
+            statusText = "Missing Scores";
+          }
+        }
+
+        return `
+          <tr class="${rowClass}">
+            <td>${fx.game_date}</td>
+            <td>${fx.home_away}</td>
+            <td>vs ${fx.opposition}</td>
+            <td>${statusText}</td>
+          </tr>
+        `;
+      })
+    );
+
+    tbody.innerHTML = fixtureRows.join("");
+  }
+
+  loadFixturesOverview();
+</script>
+
+</body>
+</html>

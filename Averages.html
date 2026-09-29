@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <title>Sharks – Player Averages</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    th { background: #eee; }
+  </style>
+</head>
+
+<body>
+
+<div id="nav-placeholder"></div>
+
+<script>
+  fetch("Nav.html")
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById("nav-placeholder").innerHTML = html;
+      initNav();
+    });
+
+  function initNav() {
+    const page = window.location.pathname.split("/").pop().toLowerCase();
+    document.querySelectorAll(".gh-tabs a").forEach(link => {
+      const href = link.getAttribute("href").toLowerCase();
+      if (href.includes(page)) link.classList.add("active");
+    });
+  }
+</script>
+
+<h1>Wye Emms – Player Stats</h1>
+
+<table id="avgTable">
+  <thead>
+    <tr>
+      <th>Player</th>
+      <th>Games</th>
+      <th>Highest Score</th>
+      <th>Average</th>
+      <th>Spares</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script type="module">
+  import { supabase } from "./supabase.js";
+
+  async function loadAverages() {
+    // 1. Get team name from URL
+    const params = new URLSearchParams(window.location.search);
+    const teamName = params.get("team") || "Sharks";
+    const season = params.get("season") || "2026/27";
+
+    document.querySelector("h1").textContent = `${teamName} – Player Stats`;
+
+    // 2. Call your new RPC
+    const { data: stats, error } = await supabase.rpc(
+      "tmsl_get_player_stats",
+      { team: teamName, season }
+    );
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    // 3. Render table
+    const tbody = document.querySelector("#avgTable tbody");
+    tbody.innerHTML = "";
+
+    stats.forEach(row => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${row.player_name}</td>
+        <td>${row.games_played}</td>
+        <td>${row.highest_score}</td>
+        <td>${Number(row.average_score).toFixed(2)}</td>
+        <td>${row.spares_count}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  loadAverages();
+</script>
+
+</body>
+</html>
