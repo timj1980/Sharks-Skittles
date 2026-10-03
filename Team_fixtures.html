@@ -65,7 +65,7 @@
   document.getElementById("TeamHeading").textContent = `${team} Fixtures`;
 
   async function loadFixtures(team) {
-    const { data, error } = await supabase.rpc("get_fixtures_by_team", {
+    const { data, error } = await supabase.rpc("TMSL_get_fixtures_by_team", {
       team: team
     });
 
