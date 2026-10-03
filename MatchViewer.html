@@ -191,7 +191,7 @@
     document.getElementById("AwayTeam").innerText = awayTeamName;
 
     // Detect if this is a Summary match (no ball scores entered, but home_total/away_total exist)
-    const isSummaryOnly = rows[0].homeball1 === null && rows[0].home_total !== null;
+    const isSummaryOnly = rows[0].homeball1 === null;
 
     let frontHome = 0, frontAway = 0;
     let middleHome = 0, middleAway = 0;
@@ -284,17 +284,65 @@
     let homePoints = 0;
     let awayPoints = 0;
 
-    if (frontHome > frontAway) homePoints += 2;
-    else if (frontAway > frontHome) awayPoints += 2;
+    // Front Hands
+if (frontHome > frontAway) 
+{
+    homePoints += 2;
+}
+else if (frontAway == frontHome) 
+{
+    homePoints += 1;
+    awayPoints += 1;
+}
+else if (frontAway > frontHome) 
+{
+    awayPoints += 2;
+}
 
-    if (middleHome > middleAway) homePoints += 2;
-    else if (middleAway > middleHome) awayPoints += 2;
+// Middle Hands
+if (middleHome > middleAway) 
+{
+    homePoints += 2;
+}
+else if (middleAway == middleHome) 
+{
+    homePoints += 1;
+    awayPoints += 1;
+}
+else if (middleAway > middleHome) 
+{
+    awayPoints += 2;
+}
 
-    if (backHome > backAway) homePoints += 2;
-    else if (backAway > backHome) awayPoints += 2;
+// Back Hands
+if (backHome > backAway) 
+{
+    homePoints += 2;
+}
+else if (backAway == backHome) 
+{
+    homePoints += 1;
+    awayPoints += 1;
+}
+else if (backAway > backHome) 
+{
+    awayPoints += 2;
+}
 
-    if (matchHome > matchAway) homePoints += 4;
-    else if (matchAway > matchHome) awayPoints += 4;
+// Overall Match Score
+if (matchHome > matchAway) 
+{
+    homePoints += 4;
+}
+else if (matchHome == matchAway) 
+{
+    homePoints += 2; // Adjusted to 2 points each for a tied match (8 points total match pool)
+    awayPoints += 2;
+}
+else if (matchAway > matchHome) 
+{
+    awayPoints += 4;
+}
 
     // Render Totals Tables
     totalsDiv.innerHTML = `

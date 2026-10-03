@@ -228,7 +228,7 @@
               const sampleRow = scores[0];
 
               // Check 1: Explicit Result Summary check (balls are null, but total is populated)
-              const isSummary = sampleRow.homeball1 === null && sampleRow.home_total !== null;
+              const isSummary = sampleRow.homeball1 === null ;
 
               if (isSummary) {
                 rowClass = "status-result-summary";
